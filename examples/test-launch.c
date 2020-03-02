@@ -22,6 +22,7 @@
 #include <gst/rtsp-server/rtsp-server.h>
 
 #define DEFAULT_RTSP_PORT "8554"
+#define LUKAS_TEST
 
 static char *port = (char *) DEFAULT_RTSP_PORT;
 
@@ -40,11 +41,25 @@ main (int argc, char *argv[])
   GstRTSPMediaFactory *factory;
   GOptionContext *optctx;
   GError *error = NULL;
+  char stream_path[100];
+
+  if (argv[2] == NULL) {
+    strcpy(stream_path, "/test");
+  } else {
+    strcpy(stream_path, argv[2]);
+  }
 
   optctx = g_option_context_new ("<launch line> - Test RTSP Server, Launch\n\n"
       "Example: \"( videotestsrc ! x264enc ! rtph264pay name=pay0 pt=96 )\"");
   g_option_context_add_main_entries (optctx, entries, NULL);
   g_option_context_add_group (optctx, gst_init_get_option_group ());
+  
+  //char *opt[] = "( videotestsrc ! x264enc ! rtph264pay name=pay0 pt=96 )";
+
+  g_print("starting stream on path ");
+  g_print("%s", stream_path);
+  g_print("\n");
+
   if (!g_option_context_parse (optctx, &argc, &argv, &error)) {
     g_printerr ("Error parsing options: %s\n", error->message);
     g_option_context_free (optctx);
@@ -72,7 +87,7 @@ main (int argc, char *argv[])
   gst_rtsp_media_factory_set_shared (factory, TRUE);
 
   /* attach the test factory to the /test url */
-  gst_rtsp_mount_points_add_factory (mounts, "/test", factory);
+  gst_rtsp_mount_points_add_factory (mounts, stream_path, factory);
 
   /* don't need the ref to the mapper anymore */
   g_object_unref (mounts);
@@ -81,7 +96,7 @@ main (int argc, char *argv[])
   gst_rtsp_server_attach (server, NULL);
 
   /* start serving */
-  g_print ("stream ready at rtsp://127.0.0.1:%s/test\n", port);
+  g_print ("stream ready at rtsp://127.0.0.1:%s%s\n", port, stream_path);
   g_main_loop_run (loop);
 
   return 0;
